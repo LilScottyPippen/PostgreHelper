@@ -2,9 +2,11 @@ import psycopg2
 import os
 import time
 from prettytable import PrettyTable
+from termcolor import colored
+import getpass
 
 
-print(
+print(colored(
     "    _______  _______  _______  _________ _______  _______  _______ \n"
     "   (  ____ )(  ___  )(  ____ \ \__   __/( ____  \(  ____ )(  ____ \ \n"
     "   | (    )|| (   ) || (    \/    ) (   | (    \/| (    )|| (    \/\n"
@@ -22,7 +24,7 @@ print(
     "        | (   ) || (      | |      | (      | (      | (\ (\n"
     "        | )   ( || (____/\| (____/\| )      | (____/\| ) \ \__\n"
     "        |/     \|(_______/(_______/|/       (_______/|/   \__/\n"
-)
+,"green"))
 class DB:
     def __init__(self, db, user, password, host, port):
         self.db = db
@@ -37,16 +39,18 @@ class DB:
 
     def connection(self):
         try:
+            print(colored('Connection...', 'yellow'))
             self.conn = psycopg2.connect(database=self.db,
                                          user=self.user,
                                          password=self.password,
                                          host=self.host,
                                          port=self.port)
-            print('Connect done ✓')
-            time.sleep(1)
-            os.system('cls' if os.name == 'nt' else 'clear')
+            if self.conn != None:
+                print(colored('Connect done ✓', 'green'))
+                time.sleep(1)
+                os.system('cls' if os.name == 'nt' else 'clear')
         except:
-            print('Connect error!')
+            print(colored('Connect error!', 'red'))
             exit()
 
     def save_connection(self):
@@ -74,9 +78,12 @@ class DB:
         cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
 
         rows = cur.fetchall()
+        column_names = [desc[0] for desc in cur.description]
+        table = PrettyTable(column_names)
 
         for row in rows:
-            print(row[0])
+            table.add_row(row)
+        print(table)
 
         cur.close()
 
@@ -86,7 +93,7 @@ class DB:
         try:
             column = input('Column: ')
             table = input('Table: ')
-            cur.execute(f'SELECT {column} FROM {table}')
+            cur.execute(f'SELECT {column.lower()} FROM {table.lower()}')
 
             rows = cur.fetchall()
             column_names = [desc[0] for desc in cur.description]
@@ -95,39 +102,103 @@ class DB:
                 table.add_row(row)
             print(table)
         except:
-            print('Error!')
+            print(colored('Input Error!', 'red'))
 
         cur.close()
+
+    def create_table(self):
+        self.connection()
+        cur = self.conn.cursor()
+        tables = []
+        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+
+        rows = cur.fetchall()
+
+        for row in rows:
+            tables.append(row[0])
+
+        try:
+            table_name = input('Table name: ')
+            if str.isalpha(table_name) == True:
+                if table_name in tables:
+                    print(colored('A table with the same name already exists!', 'red'))
+                else:
+                    num_columns = int(input('Number of columns: '))
+                    columns = []
+                    for i in range(num_columns):
+                        col_name = input(f'Column {i + 1} name: ')
+                        col_type = input(f'Column {i + 1} data type: ')
+                        columns.append(f'{col_name} {col_type}')
+                    columns_str = ', '.join(columns)
+
+                    cur.execute(f'CREATE TABLE {table_name} ({(columns_str)})')
+                    self.conn.commit()
+                    print(colored('Table created ✓', 'green'))
+            else:
+                print(colored('Invalid table name!', 'red'))
+        except:
+            print(colored('Input Error!', 'red'))
+        cur.close()
+
+    def delete_table(self):
+        self.connection()
+        cur = self.conn.cursor()
+        tables = []
+        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+
+        rows = cur.fetchall()
+
+        for row in rows:
+            tables.append(row[0])
+
+        try:
+            table_name = input('Table name: ')
+            if table_name in tables:
+                is_delete = input(colored(f'Delete table "{table_name}"? [y/n]: ', 'yellow'))
+                if is_delete == 'y':
+                    cur.execute(f'DROP TABLE {table_name}')
+                    self.conn.commit()
+                    print(colored('Table deleted ✓', 'green'))
+                else:
+                    print(colored('Canceled', 'red'))
+            else:
+                print(colored('Table name not found', 'red'))
+        except:
+            print(colored('Input Error!', 'red'))
 
 if __name__ == '__main__':
     db = input('DataBase: ')
     connector = DB(db, '', '', '', '')
     if os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), f'{db}.txt')):
-        is_load = input('Load DB? [y/n]: ')
+        is_load = input(colored('Load DB? [y/n]: ', 'yellow'))
         if is_load == 'y' or is_load == 'Y':
             loadCon = connector.load_connection()
         else:
             user = input('Username: ')
-            password = input('Password: ')
+            password = getpass.getpass('Password: ')
             host = input('Host: ')
             port = input('Port: ')
             connector = DB(db, user, password, host, port)
-            is_save = input('Save connection? [y/n]: ')
+            connector.connection()
+            print(colored('Connect done ✓', 'green'))
+            is_save = input(colored('Save connection? [y/n]: ', 'yellow'))
             if is_save == 'y' or 'Y':
                 connector.save_connection()
     else:
         user = input('Username: ')
-        password = input('Password: ')
+        password = getpass.getpass('Password: ')
         host = input('Host: ')
         port = input('Port: ')
         connector = DB(db, user, password, host, port)
-        is_save = input('Save connection? [y/n]: ')
+        connector.connection()
+        print(colored('Connect done ✓', 'green'))
+        is_save = input(colored('Save connection? [y/n]: ', 'yellow'))
         if is_save == 'y' or is_save == 'Y':
             connector.save_connection()
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
-        print('1. Show tables\n2. SELECT')
+        print('1. Show tables\n2. SELECT\n3. CREATE TABLE\n4. DROP TABLE')
         choose = input('Choose: ')
 
         if choose == '1':
@@ -136,4 +207,12 @@ if __name__ == '__main__':
 
         if choose == '2':
             connector.select_tables()
+            input('\nPress Enter')
+
+        if choose == '3':
+            connector.create_table()
+            input('\nPress Enter')
+
+        if choose == '4':
+            connector.delete_table()
             input('\nPress Enter')
