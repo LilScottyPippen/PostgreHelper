@@ -1,17 +1,12 @@
-                       _______  _______  _______  _________ _______  _______  _______ 
-                      (  ____ )(  ___  )(  ____ \ \__   __/( ____  \(  ____ )(  ____ \ 
-                      | (    )|| (   ) || (    \/    ) (   | (    \/| (    )|| (    \/
-                      | (____)|| |   | || (_____     | |   | |      | (____)|| (__
-                      |  _____)| |   | |(_____  )    | |   | | ____ |     __)|  __)
-                      | (      | |   | |      ) |    | |   | | \_  )| (\ (   | (
-                      | )      | (___) |/\____) |    | |   | (___) || ) \ \__| (____/\ 
-                      |/       (_______)\_______)    )_(   (_______)|/   \__/(_______/
+<h1>PostgreHelper</h1>
 
-                                      _______  _        _______  _______  _______
-                            |\     /|(  ____ \( \      (  ____ )(  ____ \(  ____ )
-                            | )   ( || (    \/| (      | (    )|| (    \/| (    )|
-                            | (___) || (__    | |      | (____)|| (__    | (____)|
-                            |  ___  ||  __)   | |      |  _____)|  __)   |     __)
-                            | (   ) || (      | |      | (      | (      | (\ (
-                            | )   ( || (____/\| (____/\| )      | (____/\| ) \ \__
-                            |/     \|(_______/(_______/|/       (_______/|/   \__/
+**PostgreHelper** is a console application that allows you to manage PostgreSQL through the command line. With it, you can perform various operations on PostgreSQL databases without having to write source files.
+
+<h1>Installation and launch</h2>
+<code>python3 pgHelper.py</code>
+
+<h1>Usage example</h1>
+<h3>Select table</h3>
+<div align="center">
+<img src="https://user-images.githubusercontent.com/126200705/230487889-9e906905-d9a9-4966-b933-25dad7152ed2.png">
+</div>
