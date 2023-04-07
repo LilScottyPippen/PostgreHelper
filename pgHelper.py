@@ -5,7 +5,6 @@ from prettytable import PrettyTable
 from termcolor import colored
 import getpass
 
-
 print(colored(
     "    _______  _______  _______  _________ _______  _______  _______ \n"
     "   (  ____ )(  ___  )(  ____ \ \__   __/( ____  \(  ____ )(  ____ \ \n"
@@ -24,7 +23,9 @@ print(colored(
     "        | (   ) || (      | |      | (      | (      | (\ (\n"
     "        | )   ( || (____/\| (____/\| )      | (____/\| ) \ \__\n"
     "        |/     \|(_______/(_______/|/       (_______/|/   \__/\n"
-,"green"))
+    , "green"))
+
+
 class DB:
     def __init__(self, db, user, password, host, port):
         self.db = db
@@ -33,6 +34,7 @@ class DB:
         self.host = host
         self.port = port
         self.conn = None
+
     def __del__(self):
         if self.conn is not None:
             self.conn.close()
@@ -56,11 +58,14 @@ class DB:
     def save_connection(self):
         lines = [f'DataBase:{self.db}\nUser:{self.user}\nPassword:{self.password}\nHost:{self.host}\nPort:{self.port}']
 
-        with open(f'{self.db}.txt', 'w') as f:
+        if not os.path.exists('DB'):
+            os.makedirs('DB')
+
+        with open(f'DB/{self.db}.txt', 'w') as f:
             f.writelines(lines)
 
     def load_connection(self):
-        with open(f'{self.db}.txt') as f:
+        with open(f'DB/{self.db}.txt') as f:
             lines = f.readlines()
         data = {}
         for line in lines:
@@ -75,7 +80,8 @@ class DB:
     def show_tables(self):
         self.connection()
         cur = self.conn.cursor()
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
 
         rows = cur.fetchall()
         column_names = [desc[0] for desc in cur.description]
@@ -93,7 +99,7 @@ class DB:
         try:
             column = input('Column: ')
             table = input('Table: ')
-            cur.execute(f'SELECT {column.lower()} FROM {table.lower()}')
+            cur.execute(f"SELECT {column.lower()} FROM {table.lower()}")
 
             rows = cur.fetchall()
             column_names = [desc[0] for desc in cur.description]
@@ -110,7 +116,8 @@ class DB:
         self.connection()
         cur = self.conn.cursor()
         tables = []
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
 
         rows = cur.fetchall()
 
@@ -131,7 +138,7 @@ class DB:
                         columns.append(f'{col_name} {col_type}')
                     columns_str = ', '.join(columns)
 
-                    cur.execute(f'CREATE TABLE {table_name} ({(columns_str)})')
+                    cur.execute(f"CREATE TABLE {table_name} ({columns_str})")
                     self.conn.commit()
                     print(colored('Table created ✓', 'green'))
             else:
@@ -144,7 +151,8 @@ class DB:
         self.connection()
         cur = self.conn.cursor()
         tables = []
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
 
         rows = cur.fetchall()
 
@@ -156,7 +164,7 @@ class DB:
             if table_name in tables:
                 is_delete = input(colored(f'Delete table "{table_name}"? [y/n]: ', 'yellow'))
                 if is_delete == 'y':
-                    cur.execute(f'DROP TABLE {table_name}')
+                    cur.execute(f"DROP TABLE {table_name}")
                     self.conn.commit()
                     print(colored('Table deleted ✓', 'green'))
                 else:
@@ -166,10 +174,74 @@ class DB:
         except:
             print(colored('Input Error!', 'red'))
 
+    def update_table(self):
+        self.connection()
+        cur = self.conn.cursor()
+        tables = []
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+
+        rows = cur.fetchall()
+
+        for row in rows:
+            tables.append(row[0])
+
+        try:
+            table_name = input('Table name: ')
+            if table_name in tables:
+                column_name = input('Set column name: ')
+                column_value = input('Set column value: ')
+                where_column_name = input('Update column name: ')
+                where_value = input('Update column value: ')
+                os.system('cls' if os.name == 'nt' else 'clear')
+
+                cur.execute(
+                    f"SELECT data_type FROM information_schema.columns WHERE table_name='{table_name}' AND column_name = '{column_name}'")
+                row = cur.fetchall()
+
+                cur.execute(
+                    f"SELECT data_type FROM information_schema.columns WHERE table_name='{table_name}' AND column_name = '{where_column_name}'")
+                update_row = cur.fetchall()
+
+                text_types = ['text', 'char', 'varchar', 'timestamp', 'date', 'time']
+                number_types = ['integer', 'bigint', 'smallint', 'numerical', 'decimal', 'real', 'double precision',
+                                'boolean', 'serial', 'bigserial', 'smallserial']
+                query = ""
+                for r in row:
+                    r = str(r).strip("(),'")
+                    if r in text_types:
+                        query += f"UPDATE {table_name} SET {column_name} = '{column_value}' "
+                    elif type in number_types:
+                        query += f"UPDATE {table_name} SET {column_name} = {column_value} "
+
+                    for u_r in update_row:
+                        u_r = str(u_r).strip("(),'")
+                        if u_r in text_types:
+                            query += f"WHERE {where_column_name} = '{where_value}'"
+                        elif u_r in number_types:
+                            query += f"WHERE {where_column_name} = '{where_value}'"
+
+                print(query)
+                cur.execute(query)
+                self.conn.commit()
+                print(colored(f'Column "{column_name}" in table "{table_name}" updated', 'green'))
+                cur.execute(f"SELECT * FROM {table_name}")
+                rows = cur.fetchall()
+                column_names = [desc[0] for desc in cur.description]
+                table = PrettyTable(column_names)
+                for row in rows:
+                    table.add_row(row)
+                print(table)
+            else:
+                print(colored('Table name not found', 'red'))
+        except:
+            print(colored('Input error!', 'red'))
+
+
 if __name__ == '__main__':
     db = input('DataBase: ')
     connector = DB(db, '', '', '', '')
-    if os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), f'{db}.txt')):
+    if os.path.isfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), f'DB/{db}.txt')):
         is_load = input(colored('Load DB? [y/n]: ', 'yellow'))
         if is_load == 'y' or is_load == 'Y':
             loadCon = connector.load_connection()
@@ -198,21 +270,22 @@ if __name__ == '__main__':
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
-        print('1. Show tables\n2. SELECT\n3. CREATE TABLE\n4. DROP TABLE')
+        print('1. Show tables\n2. SELECT\n3. CREATE TABLE\n4. DROP TABLE\n5. UPDATE TABLE')
         choose = input('Choose: ')
 
-        if choose == '1':
-            connector.show_tables()
-            input('\nPress Enter')
-
-        if choose == '2':
-            connector.select_tables()
-            input('\nPress Enter')
-
-        if choose == '3':
-            connector.create_table()
-            input('\nPress Enter')
-
-        if choose == '4':
-            connector.delete_table()
-            input('\nPress Enter')
+        match choose:
+            case '1':
+                connector.show_tables()
+                input('\nPress Enter')
+            case '2':
+                connector.select_tables()
+                input('\nPress Enter')
+            case '3':
+                connector.create_table()
+                input('\nPress Enter')
+            case '4':
+                connector.delete_table()
+                input('\nPress Enter')
+            case '5':
+                connector.update_table()
+                input('\nPress Enter')
