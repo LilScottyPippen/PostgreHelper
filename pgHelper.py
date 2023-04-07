@@ -5,7 +5,6 @@ from prettytable import PrettyTable
 from termcolor import colored
 import getpass
 
-
 print(colored(
     "    _______  _______  _______  _________ _______  _______  _______ \n"
     "   (  ____ )(  ___  )(  ____ \ \__   __/( ____  \(  ____ )(  ____ \ \n"
@@ -24,7 +23,9 @@ print(colored(
     "        | (   ) || (      | |      | (      | (      | (\ (\n"
     "        | )   ( || (____/\| (____/\| )      | (____/\| ) \ \__\n"
     "        |/     \|(_______/(_______/|/       (_______/|/   \__/\n"
-,"green"))
+    , "green"))
+
+
 class DB:
     def __init__(self, db, user, password, host, port):
         self.db = db
@@ -33,6 +34,7 @@ class DB:
         self.host = host
         self.port = port
         self.conn = None
+
     def __del__(self):
         if self.conn is not None:
             self.conn.close()
@@ -78,7 +80,8 @@ class DB:
     def show_tables(self):
         self.connection()
         cur = self.conn.cursor()
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
 
         rows = cur.fetchall()
         column_names = [desc[0] for desc in cur.description]
@@ -113,7 +116,8 @@ class DB:
         self.connection()
         cur = self.conn.cursor()
         tables = []
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
 
         rows = cur.fetchall()
 
@@ -134,7 +138,7 @@ class DB:
                         columns.append(f'{col_name} {col_type}')
                     columns_str = ', '.join(columns)
 
-                    cur.execute(f"CREATE TABLE {table_name} ({(columns_str)})")
+                    cur.execute(f"CREATE TABLE {table_name} ({columns_str})")
                     self.conn.commit()
                     print(colored('Table created ✓', 'green'))
             else:
@@ -147,7 +151,8 @@ class DB:
         self.connection()
         cur = self.conn.cursor()
         tables = []
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
 
         rows = cur.fetchall()
 
@@ -173,7 +178,8 @@ class DB:
         self.connection()
         cur = self.conn.cursor()
         tables = []
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
 
         rows = cur.fetchall()
 
@@ -189,37 +195,37 @@ class DB:
                 where_value = input('Update column value: ')
                 os.system('cls' if os.name == 'nt' else 'clear')
 
-                cur.execute(f"SELECT data_type FROM information_schema.columns WHERE table_name='{table_name}' AND column_name = '{column_name}'")
+                cur.execute(
+                    f"SELECT data_type FROM information_schema.columns WHERE table_name='{table_name}' AND column_name = '{column_name}'")
                 row = cur.fetchall()
 
-                cur.execute(f"SELECT data_type FROM information_schema.columns WHERE table_name='{table_name}' AND column_name = '{where_column_name}'")
+                cur.execute(
+                    f"SELECT data_type FROM information_schema.columns WHERE table_name='{table_name}' AND column_name = '{where_column_name}'")
                 update_row = cur.fetchall()
 
-                text_types = ['text', 'char', 'varchar']
+                text_types = ['text', 'char', 'varchar', 'timestamp', 'date', 'time']
                 number_types = ['integer', 'bigint', 'smallint', 'numerical', 'decimal', 'real', 'double precision',
-                                'boolean']
-
+                                'boolean', 'serial', 'bigserial', 'smallserial']
+                query = ""
                 for r in row:
-                    query = ""
-                    print(r)
+                    r = str(r).strip("(),'")
                     if r in text_types:
-                        query += f"UPDATE {table_name} SET {column_name} = '{column_value} '"
-                    elif r in number_types:
+                        query += f"UPDATE {table_name} SET {column_name} = '{column_value}' "
+                    elif type in number_types:
                         query += f"UPDATE {table_name} SET {column_name} = {column_value} "
-                    print(query)
 
                     for u_r in update_row:
-                        print(u_r)
+                        u_r = str(u_r).strip("(),'")
                         if u_r in text_types:
                             query += f"WHERE {where_column_name} = '{where_value}'"
                         elif u_r in number_types:
                             query += f"WHERE {where_column_name} = '{where_value}'"
 
-                    print(query)
-
+                print(query)
+                cur.execute(query)
                 self.conn.commit()
                 print(colored(f'Column "{column_name}" in table "{table_name}" updated', 'green'))
-                cur.execute(f"SELECT * FROM {table_name} WHERE {where_column_name} = '{where_value}'")
+                cur.execute(f"SELECT * FROM {table_name}")
                 rows = cur.fetchall()
                 column_names = [desc[0] for desc in cur.description]
                 table = PrettyTable(column_names)
@@ -230,6 +236,7 @@ class DB:
                 print(colored('Table name not found', 'red'))
         except:
             print(colored('Input error!', 'red'))
+
 
 if __name__ == '__main__':
     db = input('DataBase: ')
